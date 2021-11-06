@@ -78,6 +78,7 @@ public class PalindromeTester {
             }
             lookup.add(c);
         }
+        //save any unsaved palindrome to list
         if (palindrome != null) palindromes.add(palindrome);
         return palindromes;
     }
