@@ -6,8 +6,8 @@ public class PalindromeComparator implements Comparator<Palindrome> {
         if(p1.getLength() < p2.getLength()) return 1;
         else if(p1.getLength() > p2.getLength()) return -1;
         else {
-            if(p1.getIndex() < p2.getIndex()) return 1;
-            else if(p1.getIndex() > p2.getIndex()) return -1;
+            if(p1.getIndex() > p2.getIndex()) return 1;
+            else if(p1.getIndex() < p2.getIndex()) return -1;
             else return 0;
         }
     }

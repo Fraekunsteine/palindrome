@@ -3,18 +3,6 @@ class Palindrome {
     private int index;
     private int length;
 
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public void setIndex(int index) {
-        this.index = index;
-    }
-
-    public void setLength(int length) {
-        this.length = length;
-    }
-
     public String getContent() {
         return content;
     }
