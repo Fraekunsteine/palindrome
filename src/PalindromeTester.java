@@ -6,7 +6,7 @@ public class PalindromeTester {
         String input = sc.nextLine();
         //Generate list of palindromes from string
         List<Palindrome> palindromes = new ArrayList<Palindrome>();
-        new PalindromeTester().findPalindromes(input, palindromes, new ArrayList<Character>(), -1, 0, 0);
+        new PalindromeTester().findPalindromes(input, palindromes);
 
         //Sort palindromes with custom comparator
         Collections.sort(palindromes, new PalindromeComparator());
@@ -23,7 +23,7 @@ public class PalindromeTester {
                 if (duplicates[p.getIndex()] > 0) overlapLeft = palindromes.get(duplicates[p.getIndex()] - 1);
                 Palindrome overlapRight = null;
                 if (duplicates[p.getIndex() + p.getLength() - 1] > 0) overlapRight = palindromes.get(duplicates[p.getIndex() + p.getLength() - 1] - 1);
-                if(overlapLeft != null && overlapRight != null &&
+                if (overlapLeft != null && overlapRight != null &&
                         p.getIndex() < overlapRight.getIndex() &&
                         p.getIndex() + p.getLength() > overlapLeft.getIndex() + overlapLeft.getLength()) {
                     printPalindrome(p, duplicates, id);
@@ -39,75 +39,60 @@ public class PalindromeTester {
             duplicates[i] = id;
         }
     }
-    static String visualString(String s, int index, int tempInd, int targetInd) {
+    //for debug purposes
+    static String visualString(String s, int index, int repeatInd, int targetInd) {
         String ret = "";
         for(int i = 0; i < s.length(); i++) {
             if(i == targetInd) ret += "(";
-            if(i == tempInd) ret +="{";
+            if(i == repeatInd) ret +="{";
             if(i == index) ret += "[";
             ret += s.charAt(i);
-            if(i != index && i != tempInd && i != targetInd) ret += " ";
+            if(i != index && i != repeatInd && i != targetInd) ret += " ";
             if(i == index) ret += "] ";
-            if(i == tempInd) ret +="} ";
+            if(i == repeatInd) ret +="} ";
             if(i == targetInd) ret += ") ";
         }
         return ret;
     }
-
-    private void findPalindromes(String str, List<Palindrome> palindromes, List<Character> lookup, int targetInd, int tempInd, int i) {
+    private void findPalindromes(String str, List<Palindrome> palindromes, int lower, int upper) {
         Palindrome palindrome = null;
-        int length = 0;
-        for (; i < str.length(); i++) {
-            char c = str.charAt(i);
-            if (!lookup.isEmpty()) {
-                char temp = lookup.get(tempInd), target = ' ';
-                if (targetInd > -1) target = lookup.get(targetInd);
-
-                //three checks will be done (in order of potential yield in terms of palindrome length):
-                // 1) index (targetInd) of the trailing letter to look for on opposite end of palindrome (option 1 of 2)
-                // 2) index directly preceding tempInd (option 2 of 2)
-                // 3) index (tempInd) directly preceding current index (repeating letters)
-
-                if (target == c) { //check for targetInd
-                    length = i - targetInd + 1;
-                    //check if current palindrome is a subset of the newly found palindrome and save to list if it is not
-                    if (palindrome != null && !(palindrome.getIndex() >= targetInd && palindrome.getIndex() + palindrome.getLength() <= targetInd + length)) {
-                        palindromes.add(palindrome);
-                    }
-                    palindrome = new Palindrome(str.substring(targetInd, targetInd + length), targetInd, length);
-
-                    targetInd--; //decrement targetInd to look for the next letter in the potential palindrome
-                    tempInd = i; //update tempInd to current index
-                } else if (temp == c) { //check for tempInd
-                    length = i - tempInd + 1;
-                    //check if current palindrome is a subset of the newly found palindrome and save to list if it is not
-                    if (palindrome != null && !(palindrome.getIndex() >= tempInd && palindrome.getIndex() + palindrome.getLength() <= tempInd + length)) {
-                        palindromes.add(palindrome);
-                    }
-                    palindrome = new Palindrome(str.substring(tempInd, tempInd + length), tempInd, length);
-
-                    //targetInd is mismatched so set it to tempInd - 1
-                    targetInd = tempInd - 1;
-                } else if (tempInd > 0 && lookup.get(tempInd - 1) == c) { //check for index preceding tempInd
-                    findPalindromes(str, palindromes, lookup, tempInd - 1, tempInd, i);
-                } else { //if no matches are found, save the currently found palindrome if exists
-                    if (palindrome != null && !(palindrome.getIndex() >= targetInd && palindrome.getIndex() + palindrome.getLength() <= targetInd + length)) {
-                        palindromes.add(palindrome);
-                        palindrome = null;
-                        tempInd = i; //update tempInd to current index
-                    }
-                    else tempInd++;
-                    targetInd = tempInd - 1; //match by targetInd failed, so set targetInd to tempInd - 1
-                }
-            }
-            //add palindrome to list if targetInd reaches the beginning of lookup
-            if (targetInd == -1 && palindrome != null) {
+        for(int i = lower, j = upper; i >= 0 && j < str.length(); i--, j++) {
+            if(str.charAt(i) != str.charAt(j)) break;
+            int length = j - i + 1;
+            //check if current palindrome is a subset of the newly found palindrome and save to list if it is not
+            if (palindrome != null && !(palindrome.getIndex() >= i && palindrome.getIndex() + palindrome.getLength() <= j)) {
                 palindromes.add(palindrome);
-                palindrome = null;
-                tempInd = i; //update tempInd to current index
-                targetInd = tempInd - 1;
             }
-            lookup.add(c);
+            palindrome = new Palindrome(str.substring(i, j + 1), i, length);
+        }
+        if(palindrome != null) palindromes.add(palindrome);
+    }
+    private void findPalindromes(String str, List<Palindrome> palindromes) {
+        Palindrome palindrome = null;
+        int length = 0, targetInd = -1, repeatInd = 0;
+        for (int i = 1; i < str.length(); i++) {
+            char c = str.charAt(i);
+            char temp = str.charAt(repeatInd), target = ' ';
+            if (targetInd > -1) target = str.charAt(targetInd);
+
+            //two checks will be done (in order of potential yield in terms of palindrome length):
+            // 1) index (targetInd) of the trailing letter to look for on opposite end of palindrome
+            // 2) index (repeatInd) directly preceding current index (repeating letters)
+
+            if (target == c) { //check for targetInd
+                findPalindromes(str, palindromes, targetInd, i);
+                repeatInd = i; //update repeatInd to current index
+            } else if (temp == c) { //check for repeatInd
+                length = i - repeatInd + 1;
+                //check if current palindrome is a subset of the newly found palindrome and save to list if it is not
+                if (palindrome != null && !(palindrome.getIndex() >= repeatInd && palindrome.getIndex() + palindrome.getLength() <= repeatInd + length)) {
+                    palindromes.add(palindrome);
+                }
+                palindrome = new Palindrome(str.substring(repeatInd, repeatInd + length), repeatInd, length);
+            } else { //if no matches are found, increment
+                repeatInd = i;
+            }
+            targetInd = repeatInd - 1;
         }
         //save any unsaved palindrome to list
         if (palindrome != null) palindromes.add(palindrome);
