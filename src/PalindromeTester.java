@@ -5,24 +5,31 @@ public class PalindromeTester {
         Scanner sc = new Scanner(System.in);
         String input = sc.nextLine();
         //Generate list of palindromes from string
-        List<Palindrome> palindromes = new PalindromeTester().findPalindromes(input);
+        List<Palindrome> palindromes = new ArrayList<Palindrome>();
+        new PalindromeTester().findPalindromes(input, palindromes, new ArrayList<Character>(), -1, 0, 0);
 
         //Sort palindromes with custom comparator
         Collections.sort(palindromes, new PalindromeComparator());
-        int[] duplicates = new int[input.length()+1];
+        int[] duplicates = new int[input.length() + 1];
         int id = 1;
         for (Palindrome p : palindromes) {
             //Check for subsets of palindromes as duplicates
-            if (duplicates[p.getIndex()] == 0 || duplicates[p.getIndex() + p.getLength()] == 0) {
-                printPalindrome(p, duplicates, id++);
+            if (duplicates[p.getIndex()] == 0 || duplicates[p.getIndex() + p.getLength() - 1] == 0) {
+                printPalindrome(p, duplicates, id);
             }
             else {
-                Palindrome overlapLeft = palindromes.get(duplicates[p.getIndex()] - 1);
-                Palindrome overlapRight = palindromes.get(duplicates[p.getIndex() + p.getLength()] - 1);
-                if(p.getIndex() < overlapRight.getIndex() && p.getIndex() + p.getLength() > overlapLeft.getIndex() + overlapLeft.getLength()) {
-                    printPalindrome(p, duplicates, id++);
+                //Check for subsets of palindromes as duplicates
+                Palindrome overlapLeft = null;
+                if (duplicates[p.getIndex()] > 0) overlapLeft = palindromes.get(duplicates[p.getIndex()] - 1);
+                Palindrome overlapRight = null;
+                if (duplicates[p.getIndex() + p.getLength() - 1] > 0) overlapRight = palindromes.get(duplicates[p.getIndex() + p.getLength() - 1] - 1);
+                if(overlapLeft != null && overlapRight != null &&
+                        p.getIndex() < overlapRight.getIndex() &&
+                        p.getIndex() + p.getLength() > overlapLeft.getIndex() + overlapLeft.getLength()) {
+                    printPalindrome(p, duplicates, id);
                 }
             }
+            id++;
         }
         sc.close();
     }
@@ -32,12 +39,25 @@ public class PalindromeTester {
             duplicates[i] = id;
         }
     }
-    private List<Palindrome> findPalindromes(String str) {
-        List<Palindrome> palindromes = new ArrayList<Palindrome>();
-        List<Character> lookup = new ArrayList<Character>();
+    static String visualString(String s, int index, int tempInd, int targetInd) {
+        String ret = "";
+        for(int i = 0; i < s.length(); i++) {
+            if(i == targetInd) ret += "(";
+            if(i == tempInd) ret +="{";
+            if(i == index) ret += "[";
+            ret += s.charAt(i);
+            if(i != index && i != tempInd && i != targetInd) ret += " ";
+            if(i == index) ret += "] ";
+            if(i == tempInd) ret +="} ";
+            if(i == targetInd) ret += ") ";
+        }
+        return ret;
+    }
+
+    private void findPalindromes(String str, List<Palindrome> palindromes, List<Character> lookup, int targetInd, int tempInd, int i) {
         Palindrome palindrome = null;
         int length = 0;
-        for (int i = 0, tempInd = 0, targetInd = -1; i < str.length(); i++) {
+        for (; i < str.length(); i++) {
             char c = str.charAt(i);
             if (!lookup.isEmpty()) {
                 char temp = lookup.get(tempInd), target = ' ';
@@ -57,22 +77,19 @@ public class PalindromeTester {
                     palindrome = new Palindrome(str.substring(targetInd, targetInd + length), targetInd, length);
 
                     targetInd--; //decrement targetInd to look for the next letter in the potential palindrome
-                    tempInd++;
+                    tempInd = i; //update tempInd to current index
                 } else if (temp == c) { //check for tempInd
+                    length = i - tempInd + 1;
                     //check if current palindrome is a subset of the newly found palindrome and save to list if it is not
                     if (palindrome != null && !(palindrome.getIndex() >= tempInd && palindrome.getIndex() + palindrome.getLength() <= tempInd + length)) {
                         palindromes.add(palindrome);
                     }
-                } else if (tempInd > 1 && lookup.get(tempInd - 1) == c) { //check for index preceding tempInd
-                    length = i - tempInd + 2;
-                    //check if current palindrome is a subset of the newly found palindrome and save to list if it is not
-                    if (palindrome != null && !(palindrome.getIndex() >= tempInd - 1 && palindrome.getIndex() + palindrome.getLength() <= tempInd - 1 + length)) {
-                        palindromes.add(palindrome);
-                    }
-                    palindrome = new Palindrome(str.substring(tempInd - 1, tempInd - 1 + length), tempInd - 1, length);
+                    palindrome = new Palindrome(str.substring(tempInd, tempInd + length), tempInd, length);
 
-                    targetInd = tempInd - 2; //since tempInd - 1 is chosen over targetInd, set targetInd to tempInd - 1 and decrement
-                    tempInd++;
+                    //targetInd is mismatched so set it to tempInd - 1
+                    targetInd = tempInd - 1;
+                } else if (tempInd > 0 && lookup.get(tempInd - 1) == c) { //check for index preceding tempInd
+                    findPalindromes(str, palindromes, lookup, tempInd - 1, tempInd, i);
                 } else { //if no matches are found, save the currently found palindrome if exists
                     if (palindrome != null && !(palindrome.getIndex() >= targetInd && palindrome.getIndex() + palindrome.getLength() <= targetInd + length)) {
                         palindromes.add(palindrome);
@@ -94,6 +111,5 @@ public class PalindromeTester {
         }
         //save any unsaved palindrome to list
         if (palindrome != null) palindromes.add(palindrome);
-        return palindromes;
     }
 }
