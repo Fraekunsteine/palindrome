@@ -18,7 +18,7 @@ public class PalindromeTester {
                 printPalindrome(p, duplicates, id);
             }
             else {
-                //Check for subsets of palindromes as duplicates
+                //obtain potential overlaps with different palindromes and compare
                 Palindrome overlapLeft = null;
                 if (duplicates[p.getIndex()] > 0) overlapLeft = palindromes.get(duplicates[p.getIndex()] - 1);
                 Palindrome overlapRight = null;
@@ -53,8 +53,21 @@ public class PalindromeTester {
         }
         return ret;
     }
-
-    private void findPalindromes(String str, List<Palindrome> palindromes, List<Character> lookup, int targetInd, int tempInd, int i) {
+    //helper function to detect palindromes by expanding lower and upper bounds
+    private void findPalindromes(String str, List<Palindrome> palindromes, int lower, int upper) {
+        Palindrome palindrome = null;
+        for(int i = lower, j = upper; i >= 0 && j < str.length(); i--, j++) {
+            if(str.charAt(i) != str.charAt(j)) break;
+            int length = j - i + 1;
+            //check if current palindrome is a subset of the newly found palindrome and save to list if it is not
+            if (palindrome != null && !(palindrome.getIndex() >= i && palindrome.getIndex() + palindrome.getLength() <= j)) {
+                palindromes.add(palindrome);
+            }
+            palindrome = new Palindrome(str.substring(i, j + 1), i, length);
+        }
+        if(palindrome != null) palindromes.add(palindrome);
+    }
+    private void findPalindromes(String str, List<Palindrome> palindromes) {
         Palindrome palindrome = null;
         int length = 0;
         for (; i < str.length(); i++) {
@@ -99,6 +112,9 @@ public class PalindromeTester {
                     else tempInd++;
                     targetInd = tempInd - 1; //match by targetInd failed, so set targetInd to tempInd - 1
                 }
+                palindrome = new Palindrome(str.substring(repeatInd, repeatInd + length), repeatInd, length);
+            } else { //if no matches are found, update index
+                repeatInd = i;
             }
             //add palindrome to list if targetInd reaches the beginning of lookup
             if (targetInd == -1 && palindrome != null) {
